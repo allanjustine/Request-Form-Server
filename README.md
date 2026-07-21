@@ -80,7 +80,7 @@ A robust RESTful API for managing enterprise request forms with advanced approva
 └────────┬─────────────────────────┘
          ↓
 ┌──────────────────────────────────┐
-│ Issue JWT Token                  │
+│ Issue Sanctum API Token          │
 │ Token contains:                  │
 │ - user_id                        │
 │ - user_email                     │
@@ -119,7 +119,7 @@ This Laravel backend powers a comprehensive request management system that handl
 
 ### 🔐 Authentication & Security
 
-- **JWT-Based Auth** (Laravel Sanctum) - Stateless authentication for API
+- **Sanctum API Tokens** - Laravel Sanctum for stateless API authentication
 - **Role-Based Access Control** - Admin, Manager, Approver, Requester, Branch Head
 - **Password Management** - Secure hashing, reset functionality
 - **Email Verification** - User registration validation
