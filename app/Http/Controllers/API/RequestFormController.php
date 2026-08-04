@@ -751,7 +751,7 @@ class RequestFormController extends Controller
                     =>
                     $query->where('status', $status_req)
                 )
-                ->select('id', 'user_id', 'form_type', 'form_data', 'status', 'currency', 'noted_by', 'approved_by', 'attachment', 'request_code', 'created_at', 'completed_code', 'kind_of_request', 'branch_code')
+                ->select('id', 'user_id', 'form_type', 'form_data', 'cancelation_reason', 'status', 'currency', 'noted_by', 'approved_by', 'attachment', 'request_code', 'created_at', 'completed_code', 'kind_of_request', 'branch_code')
                 ->withCount('sharedUsers as total_shared')
                 ->latest('created_at')
                 ->get();
@@ -862,6 +862,7 @@ class RequestFormController extends Controller
                     'user_id' => $requestForm->user_id,
                     'form_type' => $requestForm->form_type,
                     'form_data' => $requestForm->form_data,
+                    'cancelation_reason' => $requestForm->cancelation_reason,
                     'created_at' => $requestForm->created_at,
                     'status' => $requestForm->status,
                     'noted_by' => $formattedNotedBy,
@@ -960,7 +961,7 @@ class RequestFormController extends Controller
                 'totalPendingRequest' => $totalPendingRequest,
                 'totalDisapprovedRequest' => $totalDisapprovedRequest
 
-            ]);
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => "An error occured while counting the total request sent",
@@ -1081,6 +1082,7 @@ class RequestFormController extends Controller
             'status'                      => $requestReport->status,
             'attachment'                  => $requestReport->attachment,
             'branch_code'                 => $requestReport->branchCode,
+            'cancelation_reason'          => $requestReport->cancelation_reason,
             'request_code'                => $requestReport->request_code,
             'completed_code'              => $requestReport->completed_code,
             'requested_by'                => ($requestReport->user ? "{$requestReport->user->firstName} {$requestReport->user->lastName}" : "Unknown"),
@@ -1116,5 +1118,66 @@ class RequestFormController extends Controller
         ]);
 
         return response()->json($requestReports, 200);
+    }
+
+    public function approvalRequest()
+    {
+        $user_id = Auth::id();
+
+        $request = RequestForm::query()
+            ->with('approvalProcess')
+            ->whereRelation('approvalProcess', 'user_id', $user_id);
+
+        $total = (clone $request)->count();
+
+        $total_completed = (clone $request)->where('status', 'Completed')
+            ->count();
+
+        $total_ongoing = (clone $request)->where('status', 'Ongoing')
+            ->count();
+
+        $total_pending = (clone $request)->where('status', 'Pending')
+            ->count();
+
+        $total_disapproved = (clone $request)->where('status', 'Disapproved')
+            ->count();
+
+        return response()->json([
+            'message'           => "Approval request counted successfully",
+            'total'             => $total,
+            'total_completed'   => $total_completed,
+            'total_ongoing'     => $total_ongoing,
+            'total_pending'     => $total_pending,
+            'total_disapproved' => $total_disapproved
+        ], 200);
+    }
+
+    public function cancelRequest(Request $request, RequestForm $request_form)
+    {
+        $request->validate([
+            'cancelation_reason' => ['required']
+        ]);
+
+        $request_form->update([
+            'status'             => 'Canceled',
+            'cancelation_reason' => $request->cancelation_reason
+        ]);
+
+        return response()->json([
+            'message' => 'Request canceled successfully'
+        ], 200);
+    }
+
+    public function statusPrintableChecking(RequestForm $request_form)
+    {
+        $is_not_printable = $request_form->status === 'Canceled';
+
+        if ($is_not_printable) {
+            return response()->json([
+                'message' => 'Request form is not printable because it has been canceled'
+            ], 400);
+        }
+
+        return response()->noContent();
     }
 }
