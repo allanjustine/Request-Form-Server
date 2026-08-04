@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('request_code');
             $table->string('completed_code')->nullable();
             $table->string('kind_of_request')->nullable();
+            $table->string('cancelation_reason')->nullable();
             $table->softDeletes();
             $table->timestamps();
 

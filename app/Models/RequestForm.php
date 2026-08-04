@@ -22,7 +22,8 @@ class RequestForm extends Model
         'currency',
         'status',
         'completed_code',
-        'kind_of_request'
+        'kind_of_request',
+        'cancelation_reason'
     ];
 
     protected $attributes = [

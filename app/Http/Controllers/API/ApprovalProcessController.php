@@ -68,10 +68,17 @@ class ApprovalProcessController extends Controller
         $action = $validated['action'];
         $comment = $validated['comment'];
 
+        $requestForm = RequestForm::find($request_form_id);
+
+        if ($requestForm->status === 'Canceled') {
+            return response()->json([
+                'message' => 'Ops! This request form has been canceled. Please refresh the list to see the updated status.',
+            ], 400);
+        }
+
         DB::beginTransaction();
 
         try {
-            $requestForm = RequestForm::find($request_form_id);
 
             $approvalProcess = ApprovalProcess::where('request_form_id', $request_form_id)
                 ->where('user_id', $user_id)
@@ -291,6 +298,7 @@ class ApprovalProcessController extends Controller
         // Retrieve all approval processes where the current user is involved
         $approvalProcesses = ApprovalProcess::where('user_id', $user_id)
             ->where('status', 'Pending')
+            ->whereDoesntHaveRelation('requestForm', 'status', 'Canceled')
             ->orderBy('level')
             ->with(['requestForm.user', 'user']) // Eager load request form with user
             ->get();
@@ -487,6 +495,7 @@ class ApprovalProcessController extends Controller
         // try {
         // Retrieve all approval processes where the current user is involved
         $approvalProcesses = ApprovalProcess::where('user_id', $user_id)
+            ->whereDoesntHaveRelation('requestForm', 'status', 'Canceled')
             ->orderBy('level')
             ->when($search, fn($query) =>
             $query->where(fn($subQuery) =>
@@ -665,6 +674,7 @@ class ApprovalProcessController extends Controller
                 'completed_code' => $requestForm?->completed_code,
                 'created_at' => $requestForm?->created_at,
                 'user_requested' => $approvalProcess?->requestForm?->branchCode?->branch_code,
+                'cancelation_reason' => $requestForm?->cancelation_reason,
             ];
         })
             ->filter()

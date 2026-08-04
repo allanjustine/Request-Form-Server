@@ -76,6 +76,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('auth')->get('/view-requests', [RequestFormController::class, 'viewAllRequests']);
     Route::get("total-request-sent/{user_id}/my-request-total", [RequestFormController::class, "totalRequestSent"])->name('total.request.sent.by.user');
     Route::delete("delete-request/{id}", [RequestFormController::class, "deleteRequest"])->name('delete.request');
+    Route::get('approval-request-counts', [RequestFormController::class, 'approvalRequest']);
+    Route::patch('cancel-request/{request_form}/update', [RequestFormController::class, 'cancelRequest']);
 
     // APPROVERS
     Route::post('/approvers', [CustomApproversController::class, 'createApprovers']);
@@ -106,7 +108,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get("get-avpstaff-branch/{id}", [ApproverController::class, "getAVPFinanceStaff"])->name('get.avp.finance.staff');
     Route::put("update-avpstaff-branch/{id}", [ApproverController::class, "updateAVPFinanceStaff"])->name('update.avp.finance.staff');
     Route::delete("delete-avpstaff-branch/{id}", [ApproverController::class, "deleteAVPFinanceStaff"])->name('delete.avp.finance.staff');
-
 
     // AREA MANAGER
     Route::post("create-area-manager", [AreaManagerController::class, "createAreaManager"])->name('create.area.manager');
@@ -184,4 +185,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/shared-requests', ShareController::class);
     Route::get('lists-of-users-to-share-request', [ShareController::class, 'listsOfUsersToShareRequest']);
     Route::delete('shared-requests/{shared_request}/{user_id}/delete', [ShareController::class, 'destroyByRequestId']);
+    Route::get('status/{request_form}/checking', [RequestFormController::class, 'statusPrintableChecking']);
 });
