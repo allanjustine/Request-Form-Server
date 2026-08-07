@@ -766,7 +766,12 @@ class RequestFormController extends Controller
                 $notedByIds = $requestForm->noted_by ?? [];
                 $approvedByIds = $requestForm->approved_by ?? [];
                 $currency = $requestForm->currency;
-                $allApproversIds = array_merge($notedByIds, $approvedByIds);
+                $allApproversIds = $requestForm?->approvalProcess
+                ->pluck('user_id')
+                ->merge($notedByIds)
+                ->merge($approvedByIds)
+                ->unique()
+                ->values();
 
                 // Fetch all approvers in one query
                 $allApprovers = User::whereIn('id', $allApproversIds)
@@ -806,6 +811,28 @@ class RequestFormController extends Controller
                 // Format approved_by users
                 $formattedApprovedBy = $approvedByIds
                     ? collect($approvedByIds)->map(function ($userId) use ($allApprovers, $approvalData) {
+                        if (isset($allApprovers[$userId])) {
+                            $user = $allApprovers[$userId];
+                            $approval = $approvalData[$userId] ?? null;
+
+                            return [
+                                'id' => $user->id,
+                                'firstName' => $user->firstName,
+                                'lastName' => $user->lastName,
+                                'status' => $approval->status ?? '',
+                                'comment' => $approval->comment ?? '',
+                                'position' => $user->position,
+                                'signature' => $user->signature,
+                                'user' => $user
+                            ];
+                        }
+                    })->filter()->values()->all()
+                    : [];
+
+                $otherUserIds = $allApproversIds?->diff($notedByIds)->diff($approvedByIds);
+                     // Format avp-staff users
+                $formattedAvpStaff = $otherUserIds
+                    ? collect($otherUserIds)->map(function ($userId) use ($allApprovers, $approvalData) {
                         if (isset($allApprovers[$userId])) {
                             $user = $allApprovers[$userId];
                             $approval = $approvalData[$userId] ?? null;
@@ -868,6 +895,7 @@ class RequestFormController extends Controller
                     'noted_by' => $formattedNotedBy,
                     'currency' => $currency,
                     'approved_by' => $formattedApprovedBy,
+                    'avp_staff' => $formattedAvpStaff,
                     'requested_by' => Auth::user()->firstName . ' ' . Auth::user()->lastName,
                     'requested_signature' => Auth::user()->signature,
                     'requested_position' => Auth::user()->position,
