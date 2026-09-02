@@ -503,21 +503,22 @@ class ApprovalProcessController extends Controller
             $triQuery->where('form_type', 'LIKE', "%{$search}%")
                 ->orWhere('request_code', 'LIKE', "%{$search}%")
                 ->orWhereHas(
-                            'user',
-                            fn($user)
-                            =>
-                            $user->where('firstName', 'LIKE', "%{$search}%")
-                                ->orWhere('lastName', 'LIKE', "%{$search}%")
-                        )
+                    'user',
+                    fn($user)
+                    =>
+                    $user->search($search)
+                )
                 ->orWhereHas(
-                            'branchCode',
-                            fn($branch)
-                            =>
-                            $branch->where('branch_code', 'LIKE', "%{$search}%")
-                                ->orWhere('branch_name', 'LIKE', "%{$search}%")
-                                ->orWhere('branch', 'LIKE', "%{$search}%")
-                                ->orWhere('acronym', 'LIKE', "%{$search}%")
-                        )
+                    'branchCode',
+                    fn($branch)
+                    =>
+                    $branch->whereAny([
+                        'branch_code',
+                        'branch_name',
+                        'branch',
+                        'acronym'
+                    ], 'LIKE', "%{$search}%")
+                )
                 ->orWhereDate("created_at", $dateSearch))))
             ->with(['requestForm.user', 'requestForm.branchCode', 'user']) // Eager load request form with user
             ->when(
