@@ -616,7 +616,8 @@ class ApprovalProcessController extends Controller
                         'status' => $approval->status ?? '',
                         'comment' => $approval->comment ?? '',
                         'position' => $user->position,
-                        'signature' => $user->signature
+                        'signature' => $user->signature,
+                        'updated_at' => $approval->updated_at
                     ];
                 }
                 return null;
